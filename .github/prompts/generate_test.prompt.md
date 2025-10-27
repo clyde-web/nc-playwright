@@ -35,6 +35,7 @@
          ```
      - Ensure upload succeeds before completing the test execution.
      - Use this code for uploading `await uploadToDrive(screenshotPath, `TC-${tcNumber}.png`, JIRA_TICKET);`
+     - Comment out the upload code first. Uncomment it once all test cases have successfully passed.
 
 5. **Code Quality:**
    - Use descriptive test names based on the scenario.
