@@ -12,7 +12,7 @@ JIRA_TICKET: NC-Login
 
 **Test Case 2: Verify error message for invalid login in Traditional Chinese**
 1. goto https://english-staging.fdc-inc.com/zh-tw/login.
-2. Populate email address with "fdc.clyde+stg+zh-tw@gmail.com".
+2. Populate email address with "fdc.clyde+stg1@gmail.com".
 3. Populate password with "admin123s1".
 4. Click the button with an id of 'login-btn'.
 5. Verify error message is displayed.
