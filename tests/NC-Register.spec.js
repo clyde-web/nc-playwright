@@ -8,7 +8,7 @@ const screenshotDir = (tc) => path.join('screenshots', JIRA_TICKET, `${tc}.png`)
 async function takeScreenshot(page, tcNumber) {
   const screenshotPath = screenshotDir(tcNumber);
   await page.screenshot({ path: screenshotPath });
-  //await uploadToDrive(screenshotPath, `${tcNumber}.png`, JIRA_TICKET);
+  await uploadToDrive(screenshotPath, `${tcNumber}.png`, JIRA_TICKET);
 }
 
 test.describe('NC-Register Scenarios', () => {
@@ -51,7 +51,7 @@ test.describe('NC-Register Scenarios', () => {
     ]);
     await tosPage.waitForLoadState();
     await expect(tosPage).toHaveURL('https://english-staging.fdc-inc.com/tos');
-    await takeScreenshot(page, 'TC-004');
+    await takeScreenshot(tosPage, 'TC-004');
   });
 
   test('TC-005: Successful registration and privacy redirect', async ({ page, context }) => {
@@ -67,7 +67,7 @@ test.describe('NC-Register Scenarios', () => {
     ]);
     await privacyPage.waitForLoadState();
     await expect(privacyPage).toHaveURL('https://english-staging.fdc-inc.com/privacy');
-    await takeScreenshot(page, 'TC-005');
+    await takeScreenshot(privacyPage, 'TC-005');
   });
 
   test('TC-006: Successful registration and credit page title', async ({ page }) => {
@@ -82,46 +82,43 @@ test.describe('NC-Register Scenarios', () => {
   });
 
   test('TC-007: Payment error for invalid card', async ({ page }) => {
-    await page.goto('https://english-staging.fdc-inc.com/register');
-    const email = `fdc.clyde+playwright+tc7+${Date.now()}@gmail.com`;
-    await page.getByRole('textbox', { name: 'メールアドレス' }).fill(email);
-    await page.getByRole('textbox', { name: 'パスワード' }).fill('Password123!');
-    await page.getByRole('button', { name: '続ける' }).click();
-    await expect(page).toHaveURL(/\/register\/credit/);
-    await page.getByRole('textbox', { name: 'カード名義' }).fill('INVALID');
-    await page.getByRole('textbox', { name: 'カード番号' }).fill('1234');
-    await page.getByRole('textbox', { name: 'セキュリティコード（半角英数）' }).fill('000');
-    await page.locator('#zeus_token_card_expires_month').selectOption(['12']);
-    await page.locator('#zeus_token_card_expires_year').selectOption(['2030']);
-    await page.getByText('同意する').click();
-    await page.getByRole('button', { name: '申し込みを確定する' }).click();
-    await expect(page.getByText('「カード番号」を入力してください。')).toBeVisible();
-    //await takeScreenshot(page, 'TC-007');
+  const email = `fdc.clyde+playwright+tc7+${Date.now()}@gmail.com`;
+  await page.goto('https://english-staging.fdc-inc.com/register');
+  await page.getByRole('textbox', { name: 'メールアドレス' }).fill(email);
+  await page.getByRole('textbox', { name: 'パスワード' }).fill('Admin123?');
+  await page.getByRole('button', { name: '続ける' }).click();
+  await page.waitForTimeout(1100)
+  await page.getByRole('textbox', { name: 'カード名義' }).fill('FDC TEST');
+  await page.getByRole('textbox', { name: 'カード番号' }).fill('4934171557426452');
+  await page.locator('#zeus_token_card_expires_month').selectOption('06');
+  await page.locator('#zeus_token_card_expires_year').selectOption('2029');
+  await page.getByRole('textbox', { name: 'セキュリティコード（半角英数）' }).fill('123');
+  // Click the visible "同意する" element to trigger agreement
+  await page.getByText('同意する').click();
+  await page.getByRole('button', { name: '申し込みを確定する' }).click();
+  await expect(page.locator('li.msg', { hasText: 'クレジットカードに記載されている名前を半角英字で入力してください。' })).toBeVisible();
+  await takeScreenshot(page, 'TC-007');
   });
 
   test('TC-008: Payment success with valid card (expected to fail in test env)', async ({ page }) => {
     await page.goto('https://english-staging.fdc-inc.com/register');
     const email = `fdc.clyde+playwright+tc8+${Date.now()}@gmail.com`;
+    const cardName = "FDC TEST";
     await page.getByRole('textbox', { name: 'メールアドレス' }).fill(email);
     await page.getByRole('textbox', { name: 'パスワード' }).fill('Password123!');
     await page.getByRole('button', { name: '続ける' }).click();
     await expect(page).toHaveURL(/\/register\/credit/);
-    await page.getByRole('textbox', { name: 'カード名義' }).fill('FDC TEST');
-    await page.getByRole('textbox', { name: 'カード番号' }).fill('5555 5555 5555 4444');
-    await page.getByRole('textbox', { name: 'セキュリティコード（半角英数）' }).fill('123');
-    await page.locator('#zeus_token_card_expires_month').selectOption(['12']);
-    await page.locator('#zeus_token_card_expires_year').selectOption(['2030']);
-      // Click the label with text "同意する" until submit button is enabled
-      const submitBtn = page.getByRole('button', { name: '申し込みを確定する' });
-      const agreementLabel = page.getByText('同意する');
-      while (await submitBtn.isDisabled()) {
-        await agreementLabel.click();
-        await page.waitForTimeout(200); // Wait for UI to update
-      }
-      await expect(submitBtn).toBeEnabled();
-      await submitBtn.click();
-    // Expect loading animation or success message (may fail in test env)
-    // await expect(page.getByText('Please wait for a while')).toBeVisible();
+    await page.waitForTimeout(1150);
+    await page.getByRole('textbox', { name: 'カード名義' }).fill(cardName);
+    await page.getByRole('textbox', { name: 'カード番号' }).fill('4235751509666457');
+    await page.locator('#zeus_token_card_expires_month').selectOption(['2']);
+    await page.locator('#zeus_token_card_expires_year').selectOption(['2027']);
+    await page.getByRole('textbox', { name: 'セキュリティコード（半角英数）' }).fill('677');
+    // Click the label with text "同意する" until submit button is enabled
+    await page.getByText('同意する').click();
+    await page.getByRole('button', { name: '申し込みを確定する' }).click();
+    await expect(page.locator('li.msg', { hasText: 'クレジットカードに記載されている名前を半角英字で入力してください。' })).toBeVisible();
+    await page.getByRole('button', { name: '申し込みを確定する' }).click();
     await takeScreenshot(page, 'TC-008');
   });
 });
